@@ -99,7 +99,7 @@ router.post('/signin', function(req, res) {
 });
 
 router.route('/movies')
-    .post(function (req, res) {
+    .post(authJwtController.isAuthenticated, function (req, res) {
         //Figure out if post needs jwt
         //If there is a tittle, there exists a year released, there exists a genre
         if (req.body.title || req.body.year_released || req.body.genre){
@@ -138,7 +138,7 @@ router.route('/movies')
             res.json({success: false, message: 'Please pass title, year_released, genre, and actors.'});
         }
     })
-    .get(function (req, res) {
+    .get(authJwtController.isAuthenticated, function (req, res) {
         //https://stackoverflow.com/questions/33028273/how-to-get-mongoose-to-list-all-documents-in-the-collection-to-tell-if-the-coll
         Movie.find(function (err, result) {
             if (err) {
@@ -152,8 +152,10 @@ router.route('/movies')
         //res.status(200).send({status: 200, msg: 'GET movies', headers: req.headers, query: req.query, env: process.env.UNIQUE_KEY, result: find_result});
     })
     .put(authJwtController.isAuthenticated, function (req, res) {
-        if(req.body.title && req.body.new_title){
-          Movie.findOne({title: req.body.title}, function (err, result) {
+        if(Object.keys(req.body.updatingJson).length == 2){
+            var movie_arrray = req.body.updatingJson;
+            var movie_title = movie_arrray[0].title;
+          Movie.findOne({title: movie_title}, function (err, result) {
               if (err) {
                   return res.send(err);
               }
@@ -164,7 +166,7 @@ router.route('/movies')
                   else{
                       result.title = req.body.new_title;
                       //https://stackoverflow.com/questions/40466323/mongoose-model-update-only-update-provided-values
-                      Movie.update({title: req.body.title}, result, function (err, raw) {
+                      Movie.update({title: movie_title}, movie_arrray[1], function (err, raw) {
                           if(err){
                               res.send(err);
                           }
